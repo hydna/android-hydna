@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 class Frame {
+    static final Frame nullFrame = new Frame();
+
     static final short HEADER_SIZE = 0x05;
 
     // Content types
@@ -46,6 +48,8 @@ class Frame {
     private int mFlag;
     private byte[] mData;
 
+    Frame() {}
+
     public Frame(int ptr,
                  int ctype,
                  int op,
@@ -53,7 +57,7 @@ class Frame {
                  byte[] data) {
         super();
 
-        if (data != null && data.size() > PAYLOAD_MAX_LIMIT) {
+        if (data != null && data.length > PAYLOAD_MAX_LIMIT) {
             throw new IllegalArgumentException("Payload max limit reached");
         }
 
@@ -72,8 +76,16 @@ class Frame {
                                int ctype,
                                int op,
                                int flag,
-                               ByteBuffer data) {
+                               byte[] data) {
         return new Frame(ptr, ctype, op, flag, data);
+    }
+
+    public static Frame resolveFrame(byte[] data) {
+        return new Frame(0, UTF8, RESOLVE, 0, data);
+    }
+
+    public static Frame openFrame(int ptr, int mode, byte[] data) {
+        return new Frame(ptr, UTF8, OPEN, mode, data);
     }
 
     public static Frame dataFrame(int ptr, int ctype, int prio, byte[] data) {
@@ -84,28 +96,74 @@ class Frame {
         return new Frame(ptr, ctype, SIGNAL, SIG_EMIT, data);
     }
 
+    public static Frame endFrame(int ptr) {
+        return new Frame(ptr, UTF8, SIGNAL, SIG_END, null);
+    }
+
     public static Frame endFrame(int ptr, int ctype, byte[] data) {
         return new Frame(ptr, ctype, SIGNAL, SIG_END, data);
     }
 
-    public static Frame fromHeader(ByteBuffer header, ByteBuffer data) {
+    public static Frame fromHeader(ByteBuffer header, ByteBuffer buffer) {
+    	int ptr = header.getInt(); 
         byte of = header.get();
-        return new Frame(header.getInt(),
+        byte[] data = null;
+        if (buffer != null) {
+        	data = new byte[buffer.remaining()];
+        	buffer.get(data);
+    	}
+        return new Frame(ptr,
                          (of & CTYPE_BITMASK) >> CTYPE_BITPOS,
                          (of & OP_BITMASK) >> OP_BITPOS,
                          (of & FLAG_BITMASK),
                          data);
     }
 
+    boolean isNullFrame() {
+        return this == nullFrame;
+    }
+
+    boolean hasPayload() {
+        return mData != null && mData.length > 0;
+    }
+
+    boolean isUtfPayload() {
+        return mCtype == UTF8;
+    }
+
+    int getPtr() {
+        return mPtr;
+    }
+
+    int getContentType() {
+        return mCtype;
+    }
+
+    int getOp() {
+        return mOp;
+    }
+
+    int getFlag() {
+        return mFlag;
+    }
+
+    public Frame clone() {
+        byte[] data = null;
+        if (mData != null) {
+            data = mData.clone();
+        }
+        return new Frame(mPtr, mCtype, mOp, mFlag, data);
+    }
+
     ByteBuffer getData() {
-        return m_bytes;
+        return ByteBuffer.wrap(mData);
     }
 
     ByteBuffer getBytes() {
         short length = HEADER_SIZE;
 
         if (mData != null) {
-            length += (short)(mData.size());
+            length += (short)(mData.length);
         }
 
 
@@ -116,7 +174,7 @@ class Frame {
         bytes.putInt(mPtr);
         bytes.put((byte)((mCtype << CTYPE_BITPOS) | (mOp << OP_BITPOS) | mFlag));
 
-        if (data != null) {
+        if (mData != null) {
             bytes.put(mData);
         }
 
