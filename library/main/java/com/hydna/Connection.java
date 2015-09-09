@@ -222,7 +222,7 @@ public class Connection implements Runnable {
         }
 
     }
-	
+
     public void run() {
         try {
             connect();
@@ -253,7 +253,7 @@ public class Connection implements Runnable {
 
         mSocketChannel = SocketChannel.open(address);
         mSocket = mSocketChannel.socket();
-        
+
         try {
             mSocket.setTcpNoDelay(true);
         } catch (SocketException e) {
@@ -269,7 +269,7 @@ public class Connection implements Runnable {
 
         stream.writeBytes("\r\n\r\n");
     }
-	
+
 
     /**
      *  Handle the Handshake response frame.
@@ -278,13 +278,13 @@ public class Connection implements Runnable {
         boolean fieldsLeft = true;
         boolean gotResponse = false;
         BufferedReader stream;
-        
-        
+
+
         stream = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
 
         while (fieldsLeft) {
             String line;
-        	
+
             try {
                 line = stream.readLine();
                 if (line.length() == 0) {
@@ -293,19 +293,19 @@ public class Connection implements Runnable {
             } catch (IOException e) {
                 throw ChannelException.badHttpResponse();
             }
-        	
+
             if (fieldsLeft) {
                 // First line i a response, all others are fields
                 if (!gotResponse) {
                     int code = 0;
                     int pos1, pos2;
-        			
+
                     // Take the response code from "HTTP/1.1 101
                     // Switching Protocols"
                     pos1 = line.indexOf(" ");
                     if (pos1 != -1) {
                         pos2 = line.indexOf(" ", pos1 + 1);
-        				
+
                         if (pos2 != -1) {
                             try {
                                 code = Integer.parseInt(line.substring(pos1 + 1, pos2));
@@ -336,8 +336,8 @@ public class Connection implements Runnable {
             }
         }
     }
-	
-	
+
+
     /**
      *  Handles all incoming data.
      */
@@ -458,7 +458,7 @@ public class Connection implements Runnable {
                 channel.postFrame(op, frame.clone());
             }
         } else {
-        	Channel channel = null;
+            Channel channel = null;
             if ((channel = mChannelsByRoute.get(ptr)) == null) {
                 destroy(ChannelException.protocolError());
                 return;
@@ -527,7 +527,7 @@ public class Connection implements Runnable {
 
         for (Channel channel : mChannelsByPath.values()) {
             channel.postError(error);
-        }				
+        }
 
         mChannelsByRoute.clear();
         mChannelsByPath.clear();

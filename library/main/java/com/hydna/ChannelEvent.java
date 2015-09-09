@@ -13,7 +13,7 @@ public class ChannelEvent {
     private String mUtfContent;
     private int mCtype;
     private int mPriority;
-	
+
     public ChannelEvent(Channel target, int ctype, ByteBuffer data) {
         mTarget = target;
         mData = data;
@@ -35,7 +35,7 @@ public class ChannelEvent {
 
     /**
      *  Returns the priority of the content, if a Message (onMessage), otherwise
-     *  0. 
+     *  0.
      *
      *  @return The priority of the content.
      */

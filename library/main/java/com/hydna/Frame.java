@@ -37,7 +37,7 @@ class Frame {
 
     static int CTYPE_BITPOS = 6;
     static int CTYPE_BITMASK = (0x1 << CTYPE_BITPOS);
-    
+
 
     // Upper payload limit (10kb)
     static final int PAYLOAD_MAX_LIMIT = 0xFFFF - HEADER_SIZE;
@@ -105,13 +105,13 @@ class Frame {
     }
 
     public static Frame fromHeader(ByteBuffer header, ByteBuffer buffer) {
-    	int ptr = header.getInt(); 
+        int ptr = header.getInt();
         byte of = header.get();
         byte[] data = null;
         if (buffer != null) {
-        	data = new byte[buffer.remaining()];
-        	buffer.get(data);
-    	}
+            data = new byte[buffer.remaining()];
+            buffer.get(data);
+        }
         return new Frame(ptr,
                          (of & CTYPE_BITMASK) >> CTYPE_BITPOS,
                          (of & OP_BITMASK) >> OP_BITPOS,

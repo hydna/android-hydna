@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
         Channel channel = new Channel() {
             @Override
             public void onConnect(ChannelEvent event) {
-            	System.out.println("Connected to hydna, sending message");
+                System.out.println("Connected to hydna, sending message");
                 try {
                     send("Hello world from java!");
                 } catch (ChannelException e) {
@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
 
              @Override
              public void onMessage(ChannelEvent event) {
-            	 System.out.println("Received message " + event.getString());
+                 System.out.println("Received message " + event.getString());
                  try {
                      close();
                  } catch (ChannelException e) {

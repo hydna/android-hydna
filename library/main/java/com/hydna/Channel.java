@@ -162,7 +162,7 @@ public class Channel {
 
 
     /**
-     *  Connects the channel to the specified channel. If the connection 
+     *  Connects the channel to the specified channel. If the connection
      *  fails, an exception is thrown.
      *
      *  @param url The URL to connect to,
@@ -170,13 +170,13 @@ public class Channel {
      */
     public void connect(String url, int mode)
         throws MalformedURLException, ChannelException {
-    	 Pattern p = Pattern.compile("[a-zA-Z]://");
-    	 Matcher m = p.matcher(url);
-    	 connect(new URL(m.matches() == false ? "http://" + url : url), mode);
+        Pattern p = Pattern.compile("[a-zA-Z]://");
+        Matcher m = p.matcher(url);
+        connect(new URL(m.matches() == false ? "http://" + url : url), mode);
     }
 
     /**
-     *  Connects the channel to the specified channel. If the connection 
+     *  Connects the channel to the specified channel. If the connection
      *  fails, an exception is thrown.
      *
      *  @param url The URL to connect to,
@@ -191,7 +191,7 @@ public class Channel {
         if (mClosing) {
             throw new ChannelException("Channel is closing");
         }
-  
+
         if (mode < ChannelMode.LISTEN ||
             mode > ChannelMode.READWRITEEMIT) {
             throw new ChannelException("Invalid channel mode");
@@ -201,15 +201,15 @@ public class Channel {
         mMode = mode;
 
         String tokens = "";
-    
+
         if (url.getProtocol().equals("http") == false) {
             if (url.getProtocol().equals("https")) {
                 throw new ChannelException("The protocol HTTPS is not supported");
             } else {
-                throw new ChannelException("Bad protocol: '" + url.getProtocol() + "'");	
+                throw new ChannelException("Bad protocol: '" + url.getProtocol() + "'");
             }
         }
-    
+
         mPath = url.getPath();
 
         if (mPath.length() == 0 || mPath.charAt(0) != '/') {
@@ -227,7 +227,7 @@ public class Channel {
         if (tokens != null && tokens != "") {
             mToken = getBytes(tokens, "Unable to encode token data");
         } else {
-        	tokens = null;
+            tokens = null;
         }
 
         mConnection = Connection.getConnection(url.getProtocol(),
@@ -413,7 +413,7 @@ public class Channel {
     }
 
     void handleSignalFrame(Frame frame) {
-        switch (frame.getFlag()) { 
+        switch (frame.getFlag()) {
 
             case Frame.SIG_EMIT:
                 onSignal(ChannelEvent.fromFrame(this, frame));
@@ -552,7 +552,7 @@ public class Channel {
         if (buffer != null) {
           data = new byte[buffer.remaining()];
           buffer.get(data);
-        } 
+        }
         return data;
     }
 
