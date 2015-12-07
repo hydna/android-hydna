@@ -54,6 +54,10 @@ public class Connection implements Runnable {
         mConnections = new HashMap<String, ArrayList<Connection>>();
     }
 
+    class SenderCallback {
+        void willTerminate(ChannelException error) {};
+    }
+
 
     private class Sender implements Runnable {
 
@@ -61,26 +65,51 @@ public class Connection implements Runnable {
 
         private Thread mThread;
         private SocketChannel mChannel;
+        private SenderCallback mCallback;
+        private long mLastSendTick;
 
         public Sender() {
-
             queue = new LinkedBlockingQueue<Frame>();
             mThread = new Thread(this);
         }
 
-        void start(SocketChannel channel) {
+        void start(SocketChannel channel, SenderCallback callback) {
             mChannel = channel;
+            mCallback = callback;
             mThread.start();
         }
 
         public void run() {
+
+            Frame heartbeatFrame = Frame.create(0, 0, 0, 0);
+
+            try {
+                sendFrame(heartbeatFrame);
+            } catch (Exception e) {
+                mCallback.willTerminate(new ChannelException(e.getMessage()));
+                return;
+            }
+
             for (;;) {
 
                 Frame frame;
 
                 try {
+                    if (queue.isEmpty()) {
+                        if (System.currentTimeMillis() - mLastSendTick >= 10000) {
+                            try {
+                                sendFrame(heartbeatFrame);
+                            } catch (Exception e) {
+                                mCallback.willTerminate(new ChannelException(e.getMessage()));
+                                return;
+                            }
+                        }
+                        Thread.sleep(1);
+                        continue;
+                    }
                     frame = queue.take();
                 } catch (InterruptedException e) {
+                    mCallback.willTerminate(new ChannelException(e.getMessage()));
                     return;
                 }
 
@@ -89,20 +118,27 @@ public class Connection implements Runnable {
                     return;
                 }
 
-                int n = -1;
-                ByteBuffer data = frame.getBytes();
-                int size = data.capacity();
-                int offset = 0;
 
                 try {
-                    while(offset < size) {
-                        n = mChannel.write(data);
-                        offset += n;
-                    }
+                    sendFrame(frame);
                 } catch (Exception e) {
+                    mCallback.willTerminate(new ChannelException(e.getMessage()));
                     return;
                 }
             }
+        }
+
+        void sendFrame(Frame frame) throws IOException {
+            int n = -1;
+            ByteBuffer data = frame.getBytes();
+            int size = data.capacity();
+            int offset = 0;
+
+            while(offset < size) {
+                n = mChannel.write(data);
+                offset += n;
+            }
+            mLastSendTick = System.currentTimeMillis();
         }
     }
 
@@ -227,7 +263,13 @@ public class Connection implements Runnable {
         try {
             connect();
             handshakeHandler();
-            mSender.start(mSocketChannel);
+            SenderCallback callback = new SenderCallback() {
+                @Override
+                void willTerminate(ChannelException error) {
+                    destroy(error);
+                }
+            };
+            mSender.start(mSocketChannel, callback);
             receiveHandler();
         } catch (UnknownHostException e) {
             destroy(ChannelException.unableToResolve(mHost));
@@ -489,6 +531,11 @@ public class Connection implements Runnable {
                mSocket.isClosed() == false &&
                mSocket.isInputShutdown() == false &&
                mSocket.isOutputShutdown() == false;
+    }
+
+    void willTerminate(ChannelException error) {
+       destroy(error);
+
     }
 
     /**
